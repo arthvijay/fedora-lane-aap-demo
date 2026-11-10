@@ -1,0 +1,6 @@
+---
+collections:
+  - name: amazon.aws          # Challenge 1 (EBS volume)
+  # Only needed if you switch the onboarding playbooks to LIVE mode:
+  # - name: community.general   # gitlab_project / gitlab_project_members
+  # - name: community.postgresql

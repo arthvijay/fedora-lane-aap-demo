@@ -1,0 +1,17 @@
+---
+# Requires community.postgresql in the EE and a Machine/DB credential for db_host.
+- name: Ensure developer role exists
+  community.postgresql.postgresql_user:
+    login_host: "{{ db_host }}"
+    db: "{{ dev_database }}"
+    name: "{{ developer_username }}"
+    role_attr_flags: LOGIN,NOSUPERUSER,NOCREATEDB,NOCREATEROLE
+
+- name: Grant table privileges
+  community.postgresql.postgresql_privs:
+    login_host: "{{ db_host }}"
+    db: "{{ dev_database }}"
+    roles: "{{ developer_username }}"
+    type: table
+    objs: ALL_IN_SCHEMA
+    privs: "{{ 'SELECT' if access_level == 'read-only' else 'SELECT,INSERT,UPDATE,DELETE' }}"

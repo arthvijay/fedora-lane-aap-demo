@@ -1,0 +1,49 @@
+---
+# CHALLENGE 1 - replaces the "DB disk" section of the 500-line provision_staging_env.sh
+# Launched from AAP job template "FL | Staging DB volume (self-service)" with a survey.
+# Idempotent: re-running with the same answers changes nothing.
+- name: Fedora Lane | Staging database volume (self-service)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:                       # defaults; the AAP survey overrides these
+    env_name: qa-checkout     # Environment name
+    env_tier: qa              # dev | qa | production
+    owner: Casey Novak        # Owner of the environment
+    db_disk_gb: 40            # Database disk size (GiB)
+    aws_region: us-east-1     # Must match the region you used for "Deploy Cloud Stack in AWS"
+    volume_type: gp3
+
+  tasks:
+    - name: Validate the request before touching anything
+      ansible.builtin.assert:
+        that:
+          - env_name is match('^[a-z0-9-]{3,30}$')
+          - env_tier in ['dev', 'qa', 'production']
+          - db_disk_gb | int >= 20
+          - db_disk_gb | int <= 200
+        fail_msg: "Invalid request - nothing was changed."
+        success_msg: "Request validated."
+
+    - name: Ensure the staging database volume exists at the requested size
+      amazon.aws.ec2_vol:
+        region: "{{ aws_region }}"
+        zone: "{{ aws_region }}a"
+        name: "fl-{{ env_name }}-db"
+        volume_size: "{{ db_disk_gb | int }}"
+        volume_type: "{{ volume_type }}"
+        modify_volume: true
+        tags:
+          Owner: "{{ owner }}"
+          Environment: "{{ env_tier }}"
+          Application: fedoralane-staging-db
+          ManagedBy: ansible-automation-platform
+      register: db_volume
+
+    - name: Report the result
+      ansible.builtin.debug:
+        msg: >-
+          Volume {{ db_volume.volume_id }} for '{{ env_name }}' ({{ env_tier }}, owner {{ owner }})
+          is {{ db_disk_gb }} GiB -
+          {{ 'CHANGED by this run' if db_volume.changed else 'already as requested, nothing changed' }}.

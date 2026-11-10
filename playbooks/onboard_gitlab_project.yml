@@ -1,0 +1,39 @@
+---
+# CHALLENGE 3 - workflow step 1: create the developer's GitLab project.
+# DEMO MODE (default): the lab has no GitLab, so the step logs exactly what it would do.
+# LIVE MODE: set gitlab_url (and a GitLab token credential) to call the real API.
+- name: Fedora Lane | Create GitLab project for a new developer
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    developer_name: Sam Rivera
+    developer_username: srivera
+    gitlab_group: ecommerce
+    gitlab_project: checkout-sandbox
+    gitlab_url: ""
+  tasks:
+    - name: Validate the request
+      ansible.builtin.assert:
+        that:
+          - developer_username is match('^[a-z][a-z0-9._-]{2,30}$')
+          - gitlab_project is match('^[a-z0-9-]{3,40}$')
+        fail_msg: "Invalid onboarding request - nothing was changed."
+
+    - name: Create project and add developer (LIVE mode)
+      ansible.builtin.include_tasks: tasks/gitlab_live.yml
+      when: gitlab_url | length > 0
+
+    - name: Create project and add developer (DEMO mode)
+      ansible.builtin.debug:
+        msg:
+          - "DEMO MODE - in production this calls the GitLab API:"
+          - "Create project  {{ gitlab_group }}/{{ gitlab_project }} (private)"
+          - "Add {{ developer_name }} ({{ developer_username }}) as Developer"
+      when: gitlab_url | length == 0
+
+    - name: Hand details to the next workflow steps
+      ansible.builtin.set_stats:
+        data:
+          fl_gitlab_project: "{{ gitlab_group }}/{{ gitlab_project }}"
+          fl_developer: "{{ developer_name }} ({{ developer_username }})"

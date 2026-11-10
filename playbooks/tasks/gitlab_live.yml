@@ -1,0 +1,20 @@
+---
+# Requires community.general in the execution environment and a GitLab token
+# exposed as GITLAB_API_TOKEN by a custom credential type.
+- name: Ensure GitLab project exists
+  community.general.gitlab_project:
+    api_url: "{{ gitlab_url }}"
+    api_token: "{{ lookup('ansible.builtin.env', 'GITLAB_API_TOKEN') }}"
+    group: "{{ gitlab_group }}"
+    name: "{{ gitlab_project }}"
+    visibility: private
+    state: present
+
+- name: Ensure developer is a member
+  community.general.gitlab_project_members:
+    api_url: "{{ gitlab_url }}"
+    api_token: "{{ lookup('ansible.builtin.env', 'GITLAB_API_TOKEN') }}"
+    project: "{{ gitlab_group }}/{{ gitlab_project }}"
+    gitlab_user: "{{ developer_username }}"
+    access_level: developer
+    state: present

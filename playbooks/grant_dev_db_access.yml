@@ -1,0 +1,36 @@
+---
+# CHALLENGE 3 - workflow step 3 (runs only AFTER the database owner approves).
+# DEMO MODE by default; set db_host to run against a real PostgreSQL dev database.
+- name: Fedora Lane | Grant development database access
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    developer_username: srivera
+    dev_database: checkout_dev
+    access_level: read-only      # read-only | read-write
+    db_host: ""
+  tasks:
+    - name: Validate the request
+      ansible.builtin.assert:
+        that:
+          - dev_database in ['checkout_dev', 'catalog_dev', 'loyalty_dev']
+          - access_level in ['read-only', 'read-write']
+        fail_msg: "Invalid database request - nothing was changed."
+
+    - name: Grant access (LIVE mode)
+      ansible.builtin.include_tasks: tasks/postgres_live.yml
+      when: db_host | length > 0
+
+    - name: Grant access (DEMO mode)
+      ansible.builtin.debug:
+        msg:
+          - "DEMO MODE - in production this connects to the dev database server:"
+          - "Ensure role {{ developer_username }} exists (login, no superuser)"
+          - "Grant {{ 'SELECT' if access_level == 'read-only' else 'SELECT, INSERT, UPDATE, DELETE' }} on {{ dev_database }}"
+      when: db_host | length == 0
+
+    - name: Hand details to the summary step
+      ansible.builtin.set_stats:
+        data:
+          fl_db_grant: "{{ access_level }} on {{ dev_database }}"

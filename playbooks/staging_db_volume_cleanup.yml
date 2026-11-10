@@ -1,0 +1,25 @@
+---
+# Housekeeping after rehearsals: deletes the demo volume(s) for an environment name.
+- name: Fedora Lane | Remove staging database volume
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    env_name: qa-checkout
+    aws_region: us-east-1
+  tasks:
+    - name: Find the volume(s) for this environment
+      amazon.aws.ec2_vol_info:
+        region: "{{ aws_region }}"
+        filters:
+          "tag:Name": "fl-{{ env_name }}-db"
+      register: vols
+
+    - name: Delete them
+      amazon.aws.ec2_vol:
+        region: "{{ aws_region }}"
+        id: "{{ item.id }}"
+        state: absent
+      loop: "{{ vols.volumes }}"
+      loop_control:
+        label: "{{ item.id }}"

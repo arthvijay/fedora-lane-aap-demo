@@ -1,0 +1,10 @@
+---
+# CHALLENGE 3 - runs if the database owner denies (or the approval times out).
+- name: Fedora Lane | Onboarding request denied
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Record outcome
+      ansible.builtin.debug:
+        msg: "Database access for {{ developer_username | default('developer') }} was NOT approved. GitLab project kept; no database changes made."

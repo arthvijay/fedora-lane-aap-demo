@@ -1,0 +1,15 @@
+---
+# CHALLENGE 3 - final workflow step: one clear record of what was done.
+- name: Fedora Lane | Developer onboarding summary
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Summarize
+      ansible.builtin.debug:
+        msg:
+          - "Developer onboarding COMPLETE"
+          - "Developer : {{ fl_developer | default('n/a') }}"
+          - "GitLab    : {{ fl_gitlab_project | default('n/a') }}"
+          - "Database  : {{ fl_db_grant | default('n/a') }}"
+          - "Requested by {{ awx_user_name | default('n/a') }}; approval recorded in the workflow job."
